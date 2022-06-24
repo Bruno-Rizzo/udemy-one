@@ -1,0 +1,106 @@
+1 - Instalar o breeze
+
+2 - Alterar a tabela Users , inserindo:
+
+    $table->boolean('is_admin')->default(0);
+
+3 - Criar um seeder para o usuário Admin
+
+    sail artisan make:seeder AdminSeeder
+
+    User::create([
+            'name'     => 'Admin',
+            'email'    => 'admin@email.com',
+            'password' => bcrypt('12345678'),
+            'is_admin' => 1
+        ]);
+
+4 - Em DatabaseSeeder
+
+     $this->call(AdminSeeder::class);
+
+     sail artisan db:seed
+
+5 - Criar o Middleware Admin (app\http\middleware)
+
+    sail artisan make:middleware AdminMiddleware
+
+     if(!auth()->user() || !auth()->user()->is_admin){
+            abort(403);
+        }
+        return $next($request);
+
+6 - Publicar um apelido para o middleware no Kernel (app\http\kernel.php)
+
+    protected $routeMiddleware = [
+        'is_admin' => AdminMiddleware::class
+    ];
+
+7 - Criar o controller AdminController
+
+    sail artisan make:controller AdminController
+
+     public function index()
+    {
+        return view('admin.index');
+    }
+
+
+8 - Criar a Rota com o middleware Admin
+
+    Route::middleware(['auth','is_admin'])->group(function(){
+
+        Route::get('/admin',[AdminController::class,'index'])->name('admin.index');
+
+    });
+
+9 - Em views criar a pasta admin e dentro dela a página index.blade.php
+
+<x-admin-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Admin') }}
+        </h2>
+    </x-slot>
+</x-admin-layout>
+
+
+=========================
+
+* em resources/views/layouts renomear app.blade.php  para  admin.blade.php
+* em app/views/components renomear AppLayout.php para AdminLayout.php, modificando o nome da classe e o método
+* em views/admin/index.blade.php , copiar o conteúdo do header do dashboard
+
+==========================
+
+10 - Em resources/views/layouts/navigation , criar mais um menu
+
+    @if(Auth::user->is_admin)
+    <x-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.index')">
+        {{ __('Admin') }}
+    </x-nav-link>
+    @endIf
+
+11 - Criando o Layout do dashboard
+
+* acessar http://www.laraveller.com em blog->tailwind css->free templates, escolher nº 8 (dashboard template)
+  e clicar em download. No github, clicar em source->layouts->master
+  copiar todo o conteúdo e substituir no admin/index.blade.php
+  remover description e canonical url
+  <title>Admin</title>
+
+  <link rel="stylesheet" href="{{ mix('css/app.css') }}">
+
+  <script src="{{ mix('js/app.js') }}"></script>
+
+  @include('layouts.sidebar')
+
+  @include('layouts.header')
+
+  12 - Criar sidebar.blade.php e header.blade.php na pasta layouts. Copiar os conteúdos do github para as respectivas páginas
+
+  13 - Rodar o comando npm run watch para compilar os arquivos
+
+  14 - Copiar o form de logout do layout navigation , remover todos os links do header e colar este form
+
+  15 - Na pagina sidebar.blade.php substituir o link da rota do dashboard e remover os outros links
